@@ -1,0 +1,46 @@
+# 用 GitHub Actions 編譯平板 APP（不需要在自己電腦安裝 Android SDK）
+name: Android APK
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      - name: 安裝 Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: 安裝 Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # 明確安裝 compileSdk 34 與 AGP 8.5 預設的 build-tools，避免編譯時才臨時下載失敗
+          packages: "platform-tools platforms;android-34 build-tools;34.0.0"
+
+      - name: 安裝 Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: 編譯 Debug APK
+        run: gradle assembleDebug --stacktrace
+
+      - name: 上傳 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: boardgame-recommender-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
