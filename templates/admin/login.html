@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}後台登入｜{{ S.store_name }}{% endblock %}
+{% block content %}
+<div class="panel" style="max-width:380px;margin:60px auto">
+  <h1 style="margin-top:0">後台登入</h1>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <label class="f" for="pw">管理密碼</label>
+    <input type="password" id="pw" name="password" autofocus required>
+    <p><button class="btn btn-felt" style="width:100%">登入</button></p>
+  </form>
+</div>
+{% endblock %}

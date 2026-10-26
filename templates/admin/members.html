@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+{% block atitle %}會員{% endblock %}
+{% block content %}
+<h1>會員（共 {{ total }} 位）</h1>
+<div class="toolbar">
+  <form method="get">
+    <input type="search" name="q" value="{{ q }}" placeholder="會員編號、姓名或手機">
+    <button class="btn btn-felt btn-sm">搜尋</button>
+  </form>
+</div>
+<div class="tbl-wrap"><table>
+  <tr><th>會員編號</th><th>姓名</th><th>手機</th><th>等級</th><th class="num">POS 點數</th><th class="num">APP 點數</th><th>來源</th></tr>
+  {% for m in members %}
+  <tr><td><a href="{{ url_for('admin_member_detail', member_no=m.member_no) }}">{{ m.member_no }}</a></td>
+      <td>{{ m.name }}</td><td>{{ m.masked_phone }}</td><td>{{ m.level }}</td><td class="num">{{ m.points }}</td><td class="num"><b>{{ m.app_points }}</b></td>
+      <td><span class="badge">{{ 'POS' if m.source == 'pos' else '匯入' }}</span></td></tr>
+  {% else %}<tr><td colspan="7">沒有會員資料。可從「POS 連線」同步或「匯入／匯出」上傳。</td></tr>{% endfor %}
+</table></div>
+{% if members|length >= 500 %}<p class="hint">只顯示前 500 筆，請用搜尋縮小範圍。</p>{% endif %}
+{% endblock %}

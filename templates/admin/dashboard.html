@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block atitle %}總覽{% endblock %}
+{% block content %}
+<h1>總覽</h1>
+{% if pw_default %}
+<div class="alert-box">⚠️ 目前仍是預設密碼，請到 <a href="{{ url_for('admin_settings') }}">設定</a> 修改。</div>
+{% endif %}
+<div class="stats">
+  <div class="stat"><b>{{ counts.total }}</b><span>桌遊總數（上架 {{ counts.active }}）</span></div>
+  <div class="stat"><b>{{ counts.with_youtube }}</b><span>已有 YouTube 教學影片</span></div>
+  <div class="stat"><b>{{ member_count }}</b><span>會員數</span></div>
+  <div class="stat"><b>{{ 'ON' if pos.url else '—' }}</b><span>POS 連線{{ '已設定' if pos.url else '未設定' }}</span></div>
+  <div class="stat"><b>{{ devices.active }}</b><span><a href="{{ url_for('admin_devices') }}">平板裝置</a>（共 {{ devices.total }} 台）</span></div>
+</div>
+
+<div class="cols-2">
+  <section>
+    <h2 style="font-size:1.15rem">最常被推薦（前 3 名）</h2>
+    <div class="tbl-wrap"><table>
+      <tr><th>桌遊</th><th class="num">次數</th></tr>
+      {% for g, n in top %}<tr><td><a href="{{ url_for('admin_game_edit', game_id=g.id) }}">{{ g.name }}</a></td><td class="num">{{ n }}</td></tr>
+      {% else %}<tr><td colspan="2">還沒有問答紀錄</td></tr>{% endfor %}
+    </table></div>
+  </section>
+  <section>
+    <h2 style="font-size:1.15rem">最近問答</h2>
+    <div class="tbl-wrap"><table>
+      <tr><th>時間</th><th>答案</th><th>推薦</th></tr>
+      {% for lg in logs %}
+      <tr><td style="white-space:nowrap">{{ lg.created_at[5:16] }}</td>
+          <td>{{ lg.summary|map(attribute=1)|join('・') }}</td>
+          <td>{{ lg.games|join('、') }}</td></tr>
+      {% else %}<tr><td colspan="3">還沒有問答紀錄</td></tr>{% endfor %}
+    </table></div>
+  </section>
+</div>
+{% endblock %}

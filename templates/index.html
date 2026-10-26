@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero" id="hero">
+  <div class="dice-row"><div class="die">🎲</div><div class="die">♟️</div><div class="die">🃏</div></div>
+  <h1>回答 <em>{{ questions|length }} 個小問題</em><br>幫你挑今天的桌遊</h1>
+  <p>不用懂規則，選一選就好。大約 30 秒。</p>
+  <button type="button" class="btn btn-primary btn-xl" id="startBtn">開始挑遊戲 →</button>
+  <div class="hero-meta">店內共有 {{ game_count }} 款桌遊可以推薦</div>
+</section>
+
+<form class="quiz" id="quiz" method="post" action="{{ url_for('result') }}" autocomplete="off">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  {% if S.allow_member %}
+  <fieldset class="q-card member-step" data-member="1" style="border:0">
+    <div class="q-num">會員（可略過）</div>
+    <h2>是會員嗎？</h2>
+    <p class="q-sub">輸入手機或會員編號，幫你避開玩過的遊戲{% if S.points_per_quiz and S.points_daily_limit %}，作答還送 {{ S.points_per_quiz }} 點{% endif %}</p>
+    <div class="member-row">
+      <input type="tel" name="member_key" id="memberKey" placeholder="手機或會員編號" autocomplete="off" maxlength="40">
+      <button type="button" class="btn btn-felt" id="memberCheck">確認</button>
+    </div>
+    <div class="member-msg" id="memberMsg" aria-live="polite"></div>
+    <div class="quiz-nav nojs-hide" style="margin-top:16px">
+      <span></span>
+      <button type="button" class="btn btn-ghost" id="memberSkip">略過，直接開始 →</button>
+    </div>
+  </fieldset>
+  {% endif %}
+  <div class="progress nojs-hide" aria-hidden="true">
+    {% for q in questions %}<span></span>{% endfor %}
+  </div>
+
+  {% for q in questions %}
+  <fieldset class="q-card" data-step="{{ loop.index0 }}" style="border:0">
+    <div class="q-num">第 {{ loop.index }} / {{ questions|length }} 題</div>
+    <h2>{{ q.title }}</h2>
+    <p class="q-sub">{{ q.subtitle }}</p>
+    <div class="opts" role="radiogroup">
+      {% set outer = loop %}
+      {% for o in q.options %}
+      <div class="opt">
+        <input type="radio" id="{{ q.key }}_{{ loop.index }}" name="{{ q.key }}" value="{{ o.value }}" required>
+        <label for="{{ q.key }}_{{ loop.index }}"><span class="em">{{ o.emoji }}</span>{{ o.label }}</label>
+      </div>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% endfor %}
+
+  <div class="quiz-nav nojs-hide" id="quizNav">
+    <button type="button" class="btn btn-ghost" id="backBtn">← 上一題</button>
+    <button type="submit" class="btn btn-primary" id="submitBtn" style="display:none">看推薦結果 🎉</button>
+  </div>
+  <div class="no-js-submit"><button type="submit" class="btn btn-primary btn-xl">看推薦結果</button></div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const quiz = document.getElementById('quiz');
+  const hero = document.getElementById('hero');
+  const cards = Array.from(quiz.querySelectorAll('.q-card:not(.member-step)'));
+  const memberCard = quiz.querySelector('.member-step');
+  const progress = quiz.querySelector('.progress');
+  const nav = document.getElementById('quizNav');
+  const bars = Array.from(quiz.querySelectorAll('.progress span'));
+  const back = document.getElementById('backBtn');
+  const submit = document.getElementById('submitBtn');
+  let step = 0;
+
+  quiz.style.display = 'none';
+  document.getElementById('startBtn').addEventListener('click', () => {
+    hero.style.display = 'none';
+    quiz.style.display = 'block';
+    if (memberCard) showMember(); else show(0);
+  });
+
+  function showMember() {
+    cards.forEach(c => c.classList.remove('active'));
+    memberCard.classList.add('active');
+    progress.style.visibility = 'hidden';
+    nav.style.visibility = 'hidden';
+    setTimeout(() => document.getElementById('memberKey').focus(), 50);
+  }
+
+  if (memberCard) {
+    const key = document.getElementById('memberKey');
+    const msg = document.getElementById('memberMsg');
+    const skip = document.getElementById('memberSkip');
+    const startQuiz = () => { memberCard.classList.remove('active'); progress.style.visibility = 'visible'; nav.style.visibility = 'visible'; show(0); };
+    skip.addEventListener('click', () => { key.value = ''; startQuiz(); });
+    const check = async () => {
+      if (!key.value.trim()) { msg.textContent = '請輸入手機或會員編號，或按「略過」'; return; }
+      msg.textContent = '查詢中…'; msg.style.color = '';
+      try {
+        const fd = new FormData(); fd.append('_csrf', quiz.querySelector('[name=_csrf]').value); fd.append('member_key', key.value);
+        const res = await fetch('{{ url_for("web_member_lookup") }}', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.ok) {
+          msg.style.color = 'var(--ok)';
+          msg.textContent = data.greeting + '（目前 ' + data.points + ' 點）';
+          skip.textContent = '開始作答 →';
+          setTimeout(startQuiz, 900);
+        } else { msg.style.color = 'var(--err)'; msg.textContent = data.message; }
+      } catch (err) { msg.style.color = 'var(--err)'; msg.textContent = '連線失敗，請再試一次或按略過'; }
+    };
+    document.getElementById('memberCheck').addEventListener('click', check);
+    key.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); check(); } });
+  }
+
+  function show(i) {
+    step = i;
+    if (memberCard) memberCard.classList.remove('active');
+    cards.forEach((c, k) => c.classList.toggle('active', k === i));
+    bars.forEach((b, k) => b.classList.toggle('on', k <= i));
+    back.style.visibility = (i === 0 && !memberCard) ? 'hidden' : 'visible';
+    const last = i === cards.length - 1;
+    const answered = !!cards[i].querySelector('input:checked');
+    submit.style.display = last && answered ? 'inline-flex' : 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cards.forEach((card, i) => {
+    card.querySelectorAll('input[type=radio]').forEach(r => {
+      r.addEventListener('change', () => {
+        if (i < cards.length - 1) setTimeout(() => show(i + 1), 220);
+        else { submit.style.display = 'inline-flex'; setTimeout(() => { if (!submitted) { quiz.requestSubmit ? quiz.requestSubmit(submit) : quiz.submit(); } }, 350); }
+      });
+    });
+  });
+  // 防止「最後一題自動送出」與手動按鈕重複送出（會產生兩筆紀錄）
+  let submitted = false;
+  quiz.addEventListener('submit', e => { if (submitted) { e.preventDefault(); return; } submitted = true; });
+  back.addEventListener('click', () => { if (step > 0) show(step - 1); else if (memberCard) showMember(); });
+
+  // 閒置 90 秒自動回首頁（店內平板用）
+  let idle;
+  const reset = () => { clearTimeout(idle); idle = setTimeout(() => location.replace('{{ url_for("index") }}'), 90000); };  // replace 不保留上一位客人的選項
+  ['click', 'touchstart', 'keydown'].forEach(e => document.addEventListener(e, reset));
+})();
+</script>
+{% endblock %}

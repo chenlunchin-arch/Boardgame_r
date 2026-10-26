@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+{% block atitle %}YouTube 教學{% endblock %}
+{% block content %}
+<h1>YouTube 教學影片</h1>
+<div class="stats">
+  <div class="stat"><b>{{ counts.with_youtube }} / {{ counts.total }}</b><span>已找到教學影片</span></div>
+  <div class="stat"><b>{{ missing|length }}</b><span>尚缺影片（含只有搜尋頁）</span></div>
+  <div class="stat"><b>{{ '已設定' if S.youtube_api_key else '未設定' }}</b><span>API 金鑰</span></div>
+</div>
+
+<div class="cols-2">
+  <form method="post" class="panel">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="action" value="save_key">
+    <h2 style="margin-top:0;font-size:1.15rem">YouTube Data API 金鑰</h2>
+    <input type="password" name="api_key" value="{{ S.youtube_api_key }}" placeholder="AIza...">
+    <p class="hint">到 Google Cloud Console 啟用「YouTube Data API v3」並建立 API 金鑰。免費額度每天約可搜尋 100 次（每次搜尋耗 100 單位，每日 10,000 單位）。<br>
+    沒有金鑰也能用：系統會改存「YouTube 搜尋頁」連結，客人點了會看到搜尋結果。</p>
+    <button class="btn btn-felt btn-sm">儲存金鑰</button>
+  </form>
+  <form method="post" class="panel">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="action" value="batch">
+    <h2 style="margin-top:0;font-size:1.15rem">批次搜尋缺少的教學影片</h2>
+    <label class="f">這次處理幾款</label>
+    <input type="number" name="limit" value="20" min="1" max="100" style="max-width:140px">
+    <p class="hint">搜尋關鍵字為「遊戲名稱 桌遊 教學」，找不到好結果時再用英文名稱搜尋。會優先挑標題含「教學、規則、how to play」的影片，避開開箱、實況。</p>
+    <button class="btn btn-primary btn-sm" {{ 'disabled' if not missing }}>開始搜尋</button>
+  </form>
+</div>
+
+<h2 style="font-size:1.15rem">尚缺教學影片的桌遊</h2>
+<div class="tbl-wrap"><table>
+  <tr><th>名稱</th><th>英文名稱</th><th>目前連結</th><th></th></tr>
+  {% for g in missing[:200] %}
+  <tr><td>{{ g.name }}</td><td>{{ g.name_en }}</td>
+      <td>{% if g.youtube_url %}<a class="badge warn" href="{{ g.youtube_url }}" target="_blank">搜尋頁</a>{% else %}<span class="badge err">無</span>{% endif %}</td>
+      <td><div class="row-actions">
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_game_edit', game_id=g.id) }}">手動貼網址</a>
+        <form method="post" action="{{ url_for('admin_game_youtube', game_id=g.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="back" value="{{ url_for('admin_youtube') }}">
+          <button class="btn btn-ghost btn-sm">▶ 找影片</button>
+        </form></div></td></tr>
+  {% else %}<tr><td colspan="4">全部桌遊都有教學影片了 🎉</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

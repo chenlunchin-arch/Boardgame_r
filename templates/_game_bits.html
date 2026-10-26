@@ -1,0 +1,37 @@
+{% macro facts(g, show_price=False) -%}
+<div class="facts">
+  <span>👥 {{ g.players_text }}</span>
+  <span>⏱️ {{ g.time_text }}</span>
+  <span>🧩 {{ g.weight_text }}</span>
+  <span>🔞 {{ g.min_age }}+</span>
+  {% if g.shelf %}<span>📍 櫃位 {{ g.shelf }}</span>{% endif %}
+  {% if show_price and g.price and g.stock > 0 %}<span>🛒 ${{ (g.price or 0)|round|int }}（可購買）</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro video_button(g, idx) -%}
+  {% if g.youtube_url and not g.youtube_is_search and embed_url(g.youtube_url) %}
+    <button type="button" class="btn btn-felt btn-sm" data-video="{{ embed_url(g.youtube_url) }}" data-target="v{{ idx }}">▶ 看教學影片</button>
+    <a class="btn btn-ghost btn-sm" href="{{ g.youtube_url }}" target="_blank" rel="noopener">在 YouTube 開啟</a>
+  {% elif g.youtube_url %}
+    <a class="btn btn-felt btn-sm" href="{{ g.youtube_url }}" target="_blank" rel="noopener">▶ 搜尋教學影片</a>
+  {% else %}
+    <a class="btn btn-felt btn-sm" target="_blank" rel="noopener"
+       href="https://www.youtube.com/results?search_query={{ (g.name ~ ' 桌遊 教學')|urlencode }}">▶ 搜尋教學影片</a>
+  {% endif %}
+{%- endmacro %}
+
+{% macro video_script() -%}
+<script>
+document.addEventListener('click', function (e) {
+  const b = e.target.closest('[data-video]');
+  if (!b) return;
+  const box = document.getElementById(b.dataset.target);
+  if (!box) return;
+  if (box.innerHTML.trim()) { box.innerHTML = ''; box.hidden = true; b.textContent = '▶ 看教學影片'; return; }
+  box.hidden = false;
+  box.innerHTML = '<iframe src="' + b.dataset.video + '?rel=0" title="教學影片" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  b.textContent = '✕ 收起影片';
+});
+</script>
+{%- endmacro %}

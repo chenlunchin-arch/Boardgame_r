@@ -1,0 +1,67 @@
+{% extends "admin/base.html" %}
+{% block atitle %}會員 {{ m.member_no }}{% endblock %}
+{% block content %}
+<h1>會員：{{ m.name or m.member_no }}</h1>
+<div class="stats">
+  <div class="stat"><b>{{ m.member_no }}</b><span>會員編號</span></div>
+  <div class="stat"><b>{{ m.level or '—' }}</b><span>等級</span></div>
+  <div class="stat"><b>{{ m.app_points }}</b><span>APP 點數（本系統）</span></div>
+  <div class="stat"><b>{{ m.points }}</b><span>POS 點數（同步）</span></div>
+  <div class="stat"><b>{{ logs|length }}</b><span>推薦紀錄</span></div>
+  <div class="stat"><b>{{ history|length }}</b><span>銷售／租借紀錄</span></div>
+</div>
+<p class="hint">手機：{{ m.masked_phone }}</p>
+
+<div class="cols-2">
+  <form method="post" class="panel">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="action" value="redeem">
+    <h2 style="margin-top:0;font-size:1.1rem">🎁 兌換扣點</h2>
+    <div class="form-grid">
+      <div><label class="f">扣幾點</label><input type="number" name="amount" min="1" max="{{ m.app_points }}" required></div>
+      <div><label class="f">兌換內容（必填）</label><input type="text" name="reason" maxlength="80" required placeholder="例如：飲料一杯"></div>
+    </div>
+    <p class="hint">點數不足時不會扣。</p>
+    <button class="btn btn-primary btn-sm" {{ 'disabled' if m.app_points <= 0 }}>扣點</button>
+  </form>
+  <form method="post" class="panel">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="action" value="add">
+    <h2 style="margin-top:0;font-size:1.1rem">➕ 手動加點</h2>
+    <div class="form-grid">
+      <div><label class="f">加幾點</label><input type="number" name="amount" min="1" required></div>
+      <div><label class="f">原因（必填）</label><input type="text" name="reason" maxlength="80" required placeholder="例如：活動贈點"></div>
+    </div>
+    <p style="margin-top:12px"><button class="btn btn-felt btn-sm">加點</button></p>
+  </form>
+</div>
+
+<h2 style="font-size:1.15rem">點數明細</h2>
+<div class="tbl-wrap"><table>
+  <tr><th>時間</th><th class="num">點數</th><th>原因</th><th>問答紀錄</th></tr>
+  {% for p in ledger %}
+  <tr><td style="white-space:nowrap">{{ p.created_at }}</td>
+      <td class="num" style="color:{{ 'var(--ok)' if p.delta > 0 else 'var(--err)' }}">{{ '%+d'|format(p.delta) }}</td>
+      <td>{{ p.reason }}</td><td>{{ '#' ~ p.log_id if p.log_id else '' }}</td></tr>
+  {% else %}<tr><td colspan="4">還沒有點數紀錄</td></tr>{% endfor %}
+</table></div>
+
+<h2 style="font-size:1.15rem">推薦紀錄</h2>
+<div class="tbl-wrap"><table>
+  <tr><th>時間</th><th>回答</th><th>推薦結果</th></tr>
+  {% for lg in logs %}
+  <tr><td style="white-space:nowrap">{{ lg.created_at }}</td><td>{{ lg.summary|map(attribute=1)|join('・') }}</td><td>{{ lg.games|join('、') }}</td></tr>
+  {% else %}<tr><td colspan="3">這位會員還沒有存過推薦紀錄</td></tr>{% endfor %}
+</table></div>
+
+<h2 style="font-size:1.15rem">銷售／租借紀錄（推薦時會避開這些遊戲）</h2>
+<div class="tbl-wrap"><table>
+  <tr><th>時間</th><th>類型</th><th>商品編號</th><th>桌遊</th><th>來源</th></tr>
+  {% for h in history %}
+  <tr><td style="white-space:nowrap">{{ h.occurred_at }}</td><td>{{ '租借' if h.kind == 'rent' else '購買' }}</td>
+      <td>{{ h.pos_sku if not h.pos_sku.startswith('#name:') else '' }}</td>
+      <td>{{ h.game_name or '（未對應到桌遊）' }}</td><td>{{ 'POS' if h.source == 'pos' else '匯入' }}</td></tr>
+  {% else %}<tr><td colspan="5">沒有紀錄。可從「POS 連線」同步或「匯入／匯出」上傳。</td></tr>{% endfor %}
+</table></div>
+<p><a href="{{ url_for('admin_members') }}">← 會員列表</a></p>
+{% endblock %}

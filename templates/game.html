@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_game_bits.html" import facts, video_button, video_script with context %}
+{% block title %}{{ game.name }}｜{{ S.store_name }}{% endblock %}
+{% block content %}
+<div class="panel">
+  <h1 style="margin:0">{{ game.name }}{% if game.name_en %}<span class="en" style="font-size:1rem;color:var(--ink-2);margin-left:8px">{{ game.name_en }}</span>{% endif %}</h1>
+  {{ facts(game, S.show_price) }}
+  {% if game.tags %}<div class="chips" style="justify-content:flex-start">{% for t in game.tag_labels %}<span class="chip tag">{{ t }}</span>{% endfor %}</div>{% endif %}
+  {% if game.image_url %}<p><img src="{{ game.image_url }}" alt="{{ game.name }}" style="max-height:320px;border-radius:12px"></p>{% endif %}
+  {% if game.description %}<p>{{ game.description }}</p>{% endif %}
+  <div class="rec-actions">{{ video_button(game, 0) }}</div>
+  <div class="video" id="v0" hidden></div>
+</div>
+<p><a href="javascript:history.back()">← 返回</a></p>
+{% endblock %}
+{% block scripts %}{{ video_script() }}{% endblock %}

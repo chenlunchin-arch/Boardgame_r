@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block atitle %}桌遊資料庫{% endblock %}
+{% block content %}
+<h1>桌遊資料庫</h1>
+<div class="toolbar">
+  <form method="get">
+    <input type="search" name="q" value="{{ q }}" placeholder="搜尋名稱、英文名、商品編號、標籤">
+    {% if missing %}<input type="hidden" name="missing" value="1">{% endif %}
+    <button class="btn btn-felt btn-sm">搜尋</button>
+  </form>
+  <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_games', q=q, missing=None if missing else 1) }}">{{ '顯示全部' if missing else '只看缺教學影片' }}</a>
+  <a class="btn btn-primary btn-sm" href="{{ url_for('admin_game_edit') }}">＋ 新增桌遊</a>
+</div>
+<p class="hint">共 {{ games|length }} 筆</p>
+<div class="tbl-wrap"><table>
+  <tr><th>名稱</th><th>人數</th><th>時間</th><th>難度</th><th>標籤</th><th>編號</th><th class="num">庫存</th><th>教學影片</th><th>狀態</th><th></th></tr>
+  {% for g in games %}
+  <tr>
+    <td><b>{{ g.name }}</b>{% if g.name_en %}<br><small style="color:var(--ink-2)">{{ g.name_en }}</small>{% endif %}</td>
+    <td style="white-space:nowrap">{{ g.players_text }}</td>
+    <td style="white-space:nowrap">{{ g.time_text }}</td>
+    <td>{{ '%.1f'|format(g.weight or 0) }}</td>
+    <td>{{ g.tag_labels|join('、') }}</td>
+    <td>{{ g.pos_sku }}</td>
+    <td class="num">{{ g.stock }}</td>
+    <td>
+      {% if g.youtube_url and not g.youtube_is_search %}<a class="badge ok" href="{{ g.youtube_url }}" target="_blank" title="{{ g.youtube_title }}">影片 ✓</a>
+      {% elif g.youtube_url %}<a class="badge warn" href="{{ g.youtube_url }}" target="_blank">搜尋頁</a>
+      {% else %}<span class="badge err">無</span>{% endif %}
+    </td>
+    <td>{% if g.active %}<span class="badge ok">上架</span>{% else %}<span class="badge">下架</span>{% endif %}
+        {% if g.source == 'pos' %}<span class="badge">POS</span>{% endif %}</td>
+    <td><div class="row-actions">
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_game_edit', game_id=g.id) }}">編輯</a>
+      <form method="post" action="{{ url_for('admin_game_youtube', game_id=g.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <input type="hidden" name="back" value="{{ request.full_path }}">
+        <button class="btn btn-ghost btn-sm" title="搜尋 YouTube 教學影片">▶ 找影片</button>
+      </form>
+    </div></td>
+  </tr>
+  {% else %}<tr><td colspan="10">沒有資料。可以到「匯入／匯出」或「POS 連線」載入桌遊。</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 不依賴 AppCompat / Material Components，畫面全部由 Compose 繪製 -->
+    <style name="Theme.BoardgameRecommender" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:statusBarColor">@color/felt</item>
+        <item name="android:navigationBarColor">@color/felt</item>
+        <item name="android:colorAccent">@color/felt</item>
+    </style>
+</resources>

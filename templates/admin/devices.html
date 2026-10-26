@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block atitle %}平板配對{% endblock %}
+{% block content %}
+<h1>平板配對</h1>
+<p class="hint" style="margin-top:-8px">Android 平板 APP 透過區網連到這台電腦。每台平板一組金鑰，遺失或不用時可停用／刪除。</p>
+
+<div class="pair-box">
+  <div class="lbl">① 伺服器網址（在平板 APP 輸入）</div>
+  <div class="big">{{ server_url }}</div>
+  {% for d in devices if d.id == new_device %}
+  <div class="lbl">② 「{{ d.name }}」的裝置金鑰</div>
+  <div class="big">{{ d.api_key }}</div>
+  {% endfor %}
+  <p class="hint">平板和這台電腦需連同一個 Wi-Fi；若連不上，請確認 Windows 防火牆已允許「私人網路」。網址若不正確（電腦有多張網卡），請改用 ipconfig 查到的區網 IP。</p>
+</div>
+
+<form method="post" class="panel" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <input type="hidden" name="action" value="add">
+  <div style="flex:1;min-width:220px"><label class="f">新增裝置（名稱）</label>
+    <input type="text" name="name" maxlength="40" placeholder="例如：櫃檯平板 1" required></div>
+  <button class="btn btn-primary">＋ 產生金鑰</button>
+</form>
+
+<div class="tbl-wrap"><table>
+  <tr><th>名稱</th><th>金鑰</th><th>狀態</th><th>最後連線</th><th>建立時間</th><th></th></tr>
+  {% for d in devices %}
+  <tr>
+    <td><b>{{ d.name }}</b></td>
+    <td><details><summary>顯示</summary><code style="font-size:1rem;word-break:break-all">{{ d.api_key }}</code></details></td>
+    <td>{% if d.active %}<span class="badge ok">使用中</span>{% else %}<span class="badge">已停用</span>{% endif %}</td>
+    <td style="white-space:nowrap">{{ d.last_seen or '尚未連線' }}{% if d.last_ip %}<br><small class="hint">{{ d.last_ip }}</small>{% endif %}</td>
+    <td style="white-space:nowrap">{{ d.created_at }}</td>
+    <td><div class="row-actions">
+      <form method="post"><input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="device_id" value="{{ d.id }}">
+        <button class="btn btn-ghost btn-sm" name="action" value="{{ 'disable' if d.active else 'enable' }}">{{ '停用' if d.active else '啟用' }}</button></form>
+      <form method="post" onsubmit="return confirm('刪除後這台平板需要重新配對，確定？')"><input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="device_id" value="{{ d.id }}">
+        <button class="btn btn-ghost btn-sm" name="action" value="delete" style="color:var(--err)">刪除</button></form>
+    </div></td>
+  </tr>
+  {% else %}<tr><td colspan="6">還沒有配對任何平板。在上方輸入名稱按「產生金鑰」。</td></tr>{% endfor %}
+</table></div>
+<p class="hint">Android APP 的安裝與編譯請見 <code>android/README_android.md</code>。</p>
+{% endblock %}

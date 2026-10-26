@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ S.store_name }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block body %}
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">🎲</span>{{ S.store_name }}</a>
+      <nav class="toplinks">
+        <a href="{{ url_for('index') }}">重新推薦</a>
+        <a href="{{ url_for('browse') }}">找桌遊</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% if msgs %}<div class="flashes">{% for c, m in msgs %}<div class="flash {{ c }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

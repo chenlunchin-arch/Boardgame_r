@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block atitle %}匯入／匯出{% endblock %}
+{% block content %}
+<h1>匯入／匯出</h1>
+<div class="cols-2">
+  <form method="post" enctype="multipart/form-data" class="panel">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="kind" value="games">
+    <h2 style="margin-top:0;font-size:1.15rem">🎲 匯入桌遊</h2>
+    <input type="file" name="file" accept=".csv,.xlsx,.xlsm" required>
+    <p class="hint">支援 CSV（UTF-8 或 Big5）與 Excel。依「商品編號」或「遊戲名稱」比對：已存在就更新，否則新增。
+      匯入檔沒填的教學影片、標籤、介紹會保留原本資料。</p>
+    <p class="hint">可辨識的欄名：遊戲名稱、英文名稱、人數（如 2-5）或最少/最多人數、時間（如 30-45）、難度、年齡、類型（如「派對、合作」）、商品編號、售價、庫存、可租借、櫃位、介紹、教學影片。</p>
+    <p style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm">上傳匯入</button>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_template', kind='games') }}">下載範本</a>
+    </p>
+  </form>
+  <form method="post" enctype="multipart/form-data" class="panel">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="kind" value="members">
+    <h2 style="margin-top:0;font-size:1.15rem">👤 匯入會員</h2>
+    <input type="file" name="file" accept=".csv,.xlsx,.xlsm" required>
+    <p class="hint">依「會員編號」比對更新。可辨識：會員編號、姓名、手機、等級、點數。</p>
+    <p style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm">上傳匯入</button>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_template', kind='members') }}">下載範本</a>
+    </p>
+  </form>
+</div>
+<form method="post" enctype="multipart/form-data" class="panel">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <input type="hidden" name="kind" value="history">
+  <h2 style="margin-top:0;font-size:1.15rem">🧾 匯入會員銷售／租借紀錄</h2>
+  <input type="file" name="file" accept=".csv,.xlsx,.xlsm" required>
+  <p class="hint">推薦時會避開會員買過／租過的遊戲，並參考他常玩的風格。依「商品編號」對應到桌遊資料庫（也可用遊戲名稱）。
+    可辨識：會員編號、商品編號（或遊戲名稱）、類型（購買／租借）、日期。同一筆重複匯入會自動略過。</p>
+  <label class="f" style="margin-top:8px">沒有「類型」欄時視為</label>
+  <select name="default_kind" style="max-width:200px"><option value="buy">購買</option><option value="rent">租借</option></select>
+  <p style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm">上傳匯入</button>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_template', kind='history') }}">下載範本</a>
+  </p>
+</form>
+<div class="panel">
+  <h2 style="margin-top:0;font-size:1.15rem">📤 匯出桌遊資料庫</h2>
+  <p class="hint">匯出成 CSV（Excel 可直接開啟），可在 Excel 批次修改後再匯入。</p>
+  <a class="btn btn-felt btn-sm" href="{{ url_for('admin_export_games') }}">下載 boardgames.csv</a>
+</div>
+{% endblock %}

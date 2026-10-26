@@ -1,0 +1,55 @@
+{% extends "admin/base.html" %}
+{% block atitle %}{{ '編輯' if game.id else '新增' }}桌遊{% endblock %}
+{% block content %}
+<h1>{{ '編輯：' ~ game.name if game.id else '新增桌遊' }}</h1>
+<form method="post" class="panel">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="form-grid">
+    <div><label class="f">遊戲名稱 *</label><input type="text" name="name" value="{{ game.name }}" required></div>
+    <div><label class="f">英文名稱</label><input type="text" name="name_en" value="{{ game.name_en }}"><p class="hint">用於搜尋英文教學影片</p></div>
+    <div><label class="f">POS 商品編號</label><input type="text" name="pos_sku" value="{{ game.pos_sku }}"></div>
+    <div><label class="f">櫃位</label><input type="text" name="shelf" value="{{ game.shelf }}"></div>
+    <div><label class="f">最少人數</label><input type="number" min="1" max="20" name="min_players" value="{{ game.min_players }}"></div>
+    <div><label class="f">最多人數</label><input type="number" min="1" max="30" name="max_players" value="{{ game.max_players }}"></div>
+    <div><label class="f">最短時間（分）</label><input type="number" min="1" name="min_time" value="{{ game.min_time }}"></div>
+    <div><label class="f">最長時間（分）</label><input type="number" min="1" name="max_time" value="{{ game.max_time }}"></div>
+    <div><label class="f">難度 1–5</label><input type="number" step="0.1" min="1" max="5" name="weight" value="{{ game.weight }}"><p class="hint">1.0 入門 / 2.0 輕中度 / 3.0 中度 / 4.0 重度</p></div>
+    <div><label class="f">建議年齡</label><input type="number" min="3" max="18" name="min_age" value="{{ game.min_age }}"></div>
+    <div><label class="f">售價</label><input type="number" step="1" min="0" name="price" value="{{ (game.price or 0)|round|int }}"></div>
+    <div><label class="f">販售庫存</label><input type="number" min="0" name="stock" value="{{ game.stock }}"></div>
+    <div class="wide"><label class="f">類型標籤（影響推薦）</label>
+      {% for code, label in TAG_LABELS.items() %}
+      <label class="check"><input type="checkbox" name="tags" value="{{ code }}" {{ 'checked' if code in game.tags }}>{{ label }}</label>
+      {% endfor %}
+    </div>
+    <div class="wide"><label class="f">介紹（顯示在推薦結果）</label><textarea name="description">{{ game.description }}</textarea></div>
+    <div class="wide"><label class="f">YouTube 教學影片網址</label><input type="url" name="youtube_url" value="{{ game.youtube_url }}" placeholder="https://www.youtube.com/watch?v=...">
+      <input type="hidden" name="youtube_title" value="{{ game.youtube_title }}">
+      {% if game.youtube_title %}<p class="hint">目前：{{ game.youtube_title }}</p>{% endif %}
+      {% if game.youtube_url and embed_url(game.youtube_url) %}<div class="video" style="max-width:480px"><iframe src="{{ embed_url(game.youtube_url) }}" allowfullscreen></iframe></div>{% endif %}
+    </div>
+    <div class="wide"><label class="f">圖片網址</label><input type="url" name="image_url" value="{{ game.image_url }}"></div>
+    <div class="wide">
+      <label class="check"><input type="checkbox" name="rentable" value="1" {{ 'checked' if game.rentable }}>店內可租借遊玩</label>
+      <label class="check"><input type="checkbox" name="active" value="1" {{ 'checked' if game.active }}>上架（參與推薦）</label>
+    </div>
+  </div>
+  <p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">
+    <button class="btn btn-primary">儲存</button>
+    <a class="btn btn-ghost" href="{{ url_for('admin_games') }}">取消</a>
+  </p>
+</form>
+{% if game.id %}
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+  <form method="post" action="{{ url_for('admin_game_youtube', game_id=game.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="back" value="{{ url_for('admin_game_edit', game_id=game.id) }}">
+    <button class="btn btn-felt btn-sm">▶ 自動搜尋 YouTube 教學影片</button>
+  </form>
+  <form method="post" action="{{ url_for('admin_game_delete', game_id=game.id) }}" onsubmit="return confirm('確定刪除這款桌遊？此動作無法復原。')">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <button class="btn btn-ghost btn-sm" style="color:var(--err)">刪除此桌遊</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

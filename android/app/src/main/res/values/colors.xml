@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="paper">#FFF6EFE2</color>
+    <color name="felt">#FF1F5C4A</color>
+    <color name="meeple">#FFD2482F</color>
+    <color name="gold">#FFE3A92B</color>
+    <color name="card">#FFFFFAF1</color>
+</resources>

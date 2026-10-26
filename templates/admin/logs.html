@@ -1,0 +1,16 @@
+{% extends "admin/base.html" %}
+{% block atitle %}問答紀錄{% endblock %}
+{% block content %}
+<h1>問答紀錄（最近 300 筆）</h1>
+<div class="tbl-wrap"><table>
+  <tr><th>時間</th><th>來源</th><th>回答</th><th>推薦結果</th><th>會員</th><th class="num">送點</th></tr>
+  {% for lg in logs %}
+  <tr><td style="white-space:nowrap">{{ lg.created_at[5:16] }}</td>
+      <td style="white-space:nowrap">{{ devices.get(lg.device_id, '平板 #' ~ lg.device_id) if lg.device_id else '網頁' }}</td>
+      <td>{% for q, a in lg.summary %}<span class="chip" title="{{ q }}">{{ a }}</span> {% endfor %}</td>
+      <td>{{ lg.games|join('、') }}</td>
+      <td>{% if lg.member_no %}<a href="{{ url_for('admin_member_detail', member_no=lg.member_no) }}">{{ lg.member_no }}</a>{% endif %}</td>
+      <td class="num">{{ lg.points_awarded or '' }}</td></tr>
+  {% else %}<tr><td colspan="6">還沒有紀錄</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}
+{% block atitle %}POS 連線{% endblock %}
+{% block content %}
+<h1>POS 資料庫連線</h1>
+<p class="hint" style="margin-top:-8px">本系統只會對 POS 執行「讀取（SELECT）」，不會修改 POS 資料。{% if last_sync %}上次同步：{{ last_sync }}{% endif %}</p>
+
+<form method="post" class="panel">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <label class="f">連線字串（SQLAlchemy URL）</label>
+  <input type="text" name="url" value="{{ cfg.masked_url }}" placeholder="mysql+pymysql://帳號:密碼@192.168.1.10:3306/pos">
+  <p class="hint">
+    MySQL／MariaDB：<code>mysql+pymysql://帳號:密碼@主機:3306/資料庫</code><br>
+    SQL Server：<code>mssql+pyodbc://帳號:密碼@主機/資料庫?driver=ODBC+Driver+17+for+SQL+Server</code><br>
+    PostgreSQL：<code>postgresql+psycopg2://帳號:密碼@主機:5432/資料庫</code><br>
+    SQLite 檔案：<code>sqlite:///C:/POS/pos.db</code>　密碼顯示為 **** 時不修改即保留原密碼。建議在 POS 建立「唯讀帳號」給本系統使用。
+  </p>
+
+  <div class="cols-2" style="margin-top:14px">
+    <div>
+      <h2 style="font-size:1.1rem">🎲 桌遊商品</h2>
+      <label class="check"><input type="checkbox" name="sync_games" value="1" {{ 'checked' if cfg.sync_games }}>同步桌遊</label>
+      <label class="f" style="margin-top:8px">查詢語法</label>
+      <textarea name="game_query" style="font-family:monospace">{{ cfg.game_query }}</textarea>
+      <p class="hint">欄位對應：右邊填 POS 的欄位名稱，留空則自動辨識（中英文常見欄名）。</p>
+      <div class="map-grid">
+        {% for key, label in game_fields %}
+        <div><label class="f">{{ label }}</label><input type="text" name="gm_{{ key }}" value="{{ cfg.game_mapping.get(key, '') }}" placeholder="自動"></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <h2 style="font-size:1.1rem">👤 會員</h2>
+      <label class="check"><input type="checkbox" name="sync_members" value="1" {{ 'checked' if cfg.sync_members }}>同步會員</label>
+      <label class="f" style="margin-top:8px">查詢語法</label>
+      <textarea name="member_query" style="font-family:monospace">{{ cfg.member_query }}</textarea>
+      <div class="map-grid" style="margin-top:8px">
+        {% for key, label in member_fields %}
+        <div><label class="f">{{ label }}</label><input type="text" name="mm_{{ key }}" value="{{ cfg.member_mapping.get(key, '') }}" placeholder="自動"></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:14px">
+    <h2 style="font-size:1.1rem">🧾 會員銷售／租借紀錄</h2>
+    <label class="check"><input type="checkbox" name="sync_history" value="1" {{ 'checked' if cfg.sync_history }}>同步銷售／租借紀錄（推薦時排除會員玩過、買過的遊戲）</label>
+    <label class="f" style="margin-top:8px">查詢語法</label>
+    <textarea name="history_query" style="font-family:monospace">{{ cfg.history_query }}</textarea>
+    <p class="hint">需要的欄位：會員編號、商品編號（對應桌遊資料庫的商品編號）、類型（購買／租借，可無）、交易時間。建議加上日期條件只撈近一兩年，例如 <code>WHERE sale_date &gt;= '2025-01-01'</code>。重複同步不會產生重複紀錄。</p>
+    <div class="map-grid" style="margin-top:8px">
+      {% for key, label in history_fields %}
+      <div><label class="f">{{ label }}</label><input type="text" name="hm_{{ key }}" value="{{ cfg.history_mapping.get(key, '') }}" placeholder="自動"></div>
+      {% endfor %}
+      <div><label class="f">沒有類型欄時視為</label>
+        <select name="history_default_kind">
+          <option value="buy" {{ 'selected' if cfg.history_default_kind != 'rent' }}>購買</option>
+          <option value="rent" {{ 'selected' if cfg.history_default_kind == 'rent' }}>租借</option>
+        </select></div>
+    </div>
+  </div>
+
+  <p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">
+    <button class="btn btn-ghost btn-sm" name="action" value="save">儲存設定</button>
+    <button class="btn btn-ghost btn-sm" name="action" value="test">測試連線</button>
+    <button class="btn btn-ghost btn-sm" name="action" value="preview_games">預覽桌遊資料</button>
+    <button class="btn btn-ghost btn-sm" name="action" value="preview_members">預覽會員資料</button>
+    <button class="btn btn-ghost btn-sm" name="action" value="preview_history">預覽銷售紀錄</button>
+    <button class="btn btn-primary btn-sm" name="action" value="sync" onclick="return confirm('開始從 POS 同步資料？')">立即同步</button>
+  </p>
+</form>
+
+{% if preview %}
+<h2 style="font-size:1.15rem">預覽：{{ preview.title }}（前 {{ preview.rows|length }} 筆）</h2>
+<div class="tbl-wrap"><table>
+  <tr>{% for c in preview.cols %}<th>{{ c }}</th>{% endfor %}</tr>
+  {% for r in preview.rows %}<tr>{% for c in preview.cols %}<td>{{ r[c] }}</td>{% endfor %}</tr>{% endfor %}
+</table></div>
+<p class="hint">確認欄位名稱後，可把 POS 欄名填到上方的「欄位對應」。</p>
+{% endif %}
+{% endblock %}

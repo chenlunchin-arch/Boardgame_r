@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{% block atitle %}後台{% endblock %}｜{{ S.store_name }}{% endblock %}
+{% block body_class %}admin{% endblock %}
+{% set nav = [
+  ('admin_dashboard', '📊 總覽'),
+  ('admin_games', '🎲 桌遊資料庫'),
+  ('admin_quiz', '❓ 題目設定'),
+  ('admin_youtube', '▶️ YouTube 教學'),
+  ('admin_import', '📥 匯入／匯出'),
+  ('admin_pos', '🔌 POS 連線'),
+  ('admin_devices', '📱 平板配對'),
+  ('admin_members', '👤 會員'),
+  ('admin_logs', '📝 問答紀錄'),
+  ('admin_settings', '⚙️ 設定'),
+] %}
+{% block body %}
+<div class="mobile-nav">
+  {% for ep, label in nav %}<a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep }}">{{ label }}</a>{% endfor %}
+  <a href="{{ url_for('index') }}" target="_blank">前台↗</a>
+</div>
+<div class="admin-shell">
+  <aside class="side">
+    <a class="brand" href="{{ url_for('admin_dashboard') }}"><span class="brand-mark">🎲</span>{{ S.store_name }}<br>後台</a>
+    <nav>
+      {% for ep, label in nav %}
+      <a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep or (ep == 'admin_games' and request.endpoint == 'admin_game_edit') or (ep == 'admin_members' and request.endpoint == 'admin_member_detail') }}">{{ label }}</a>
+      {% endfor %}
+      <div class="sep"></div>
+      <a href="{{ url_for('index') }}" target="_blank">🖥️ 開啟前台 ↗</a>
+      <a href="{{ url_for('admin_logout') }}">🚪 登出</a>
+    </nav>
+  </aside>
+  <main class="main">
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% if msgs %}<div class="flashes">{% for c, m in msgs %}<div class="flash {{ c }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_game_bits.html" import facts, video_button, video_script with context %}
+{% block title %}推薦結果｜{{ S.store_name }}{% endblock %}
+{% block content %}
+<section class="result-head">
+  <h1>為你們挑好了！</h1>
+  <div class="chips">{% for q, a in summary %}<span class="chip">{{ a }}</span>{% endfor %}</div>
+  {% if member_info %}
+  <div class="member-banner">
+    {{ member_info.greeting }}
+    {% if member_info.excluded_count %}已幫你避開 {{ member_info.excluded_count }} 款玩過的遊戲。{% endif %}
+    {% if member_info.personalized %}也參考了你常玩的風格。{% endif %}
+    <br><small>{{ member_info.points_msg }}</small>
+  </div>
+  {% endif %}
+</section>
+
+{% if recs %}
+<div class="rec-list">
+  {% for r in recs %}
+  <article class="rec {% if loop.first %}first{% endif %}">
+    <div class="rank">{% if loop.first %}🏆{% else %}{{ loop.index }}{% endif %}</div>
+    <div>
+      <h3>{{ r.game.name }}{% if r.game.name_en %}<span class="en">{{ r.game.name_en }}</span>{% endif %}</h3>
+      <span class="match">契合度 {{ r.match_percent }}%</span>
+      {{ facts(r.game, S.show_price) }}
+      {% if r.game.tags %}<div class="chips" style="justify-content:flex-start">{% for t in r.game.tag_labels %}<span class="chip tag">{{ t }}</span>{% endfor %}</div>{% endif %}
+      {% if r.game.description %}<p style="margin:8px 0">{{ r.game.description }}</p>{% endif %}
+      <ul class="reasons">{% for why in r.reasons %}<li class="{{ 'played' if r.played_before and loop.first }}">{{ '🔁' if r.played_before and loop.first else '✓' }} {{ why }}</li>{% endfor %}</ul>
+      <div class="rec-actions">
+        {{ video_button(r.game, loop.index) }}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('game_detail', game_id=r.game.id) }}">詳細資料</a>
+      </div>
+      <div class="video" id="v{{ loop.index }}" hidden></div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">目前資料庫裡沒有符合的桌遊，請洽店員幫你挑選 🙏</div>
+{% endif %}
+
+{% if S.allow_member and recs and not member_info %}
+<form class="member-box" id="memberForm" method="post" action="{{ url_for('result_member', log_id=log_id) }}">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <strong>是會員嗎？</strong>
+  <input type="tel" name="member_key" placeholder="輸入手機或會員編號，存下這次推薦{% if S.points_per_quiz and S.points_daily_limit %}並領 {{ S.points_per_quiz }} 點{% endif %}" autocomplete="off" maxlength="40" required>
+  <button class="btn btn-felt btn-sm" type="submit">存到會員</button>
+  <div class="member-msg" id="memberMsg" aria-live="polite"></div>
+</form>
+{% endif %}
+
+<p style="text-align:center;margin-bottom:40px">
+  <a class="btn btn-primary" href="{{ url_for('index') }}">↻ 重新回答</a>
+</p>
+{% endblock %}
+
+{% block scripts %}
+{{ video_script() }}
+<script>
+const mf = document.getElementById('memberForm');
+if (mf) mf.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('memberMsg');
+  msg.textContent = '查詢中…';
+  try {
+    const res = await fetch(mf.action, { method: 'POST', body: new FormData(mf) });
+    const data = await res.json();
+    msg.textContent = data.message;
+    msg.style.color = data.ok ? 'var(--ok)' : 'var(--err)';
+    if (data.ok) { mf.querySelector('input[name=member_key]').value = ''; mf.querySelector('button').disabled = true; }
+  } catch (err) { msg.textContent = '連線失敗，請再試一次'; }
+});
+// 結果頁閒置 3 分鐘回首頁
+let t; const r = () => { clearTimeout(t); t = setTimeout(() => location.href = '{{ url_for("index") }}', 180000); };
+['click','touchstart','scroll'].forEach(ev => document.addEventListener(ev, r)); r();
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "admin/base.html" %}
+{% block atitle %}題目設定{% endblock %}
+{% block content %}
+<h1>題目設定</h1>
+<p class="hint" style="margin-top:-8px">網頁前台與 Android 平板共用這份題目。目前使用：{{ '自訂題目' if is_custom else '預設題目' }}。儲存前會嚴格檢查格式，有錯不會存。</p>
+
+<div class="cols-2">
+  <section>
+    <h2 style="font-size:1.1rem">目前題目預覽</h2>
+    <div class="quiz-preview">
+      {% for q in cfg.questions %}
+      <div class="qp"><b>{{ loop.index }}. {{ q.title }}</b>
+        <small class="hint">key={{ q.key }}・type={{ q.type }}{% if q.weight %}・權重 {{ q.weight|round(1) }}{% endif %}</small>
+        <div class="chips" style="justify-content:flex-start">
+          {% for o in q.options %}<span class="chip" title="{{ o.value }}">{{ o.emoji }} {{ o.label }}</span>{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="panel">
+      <h2 style="margin-top:0;font-size:1.05rem">欄位說明</h2>
+      <p class="hint">
+        <b>type</b>：<code>players</code> 人數（硬條件，選項需 min/max，必須剛好一題）、<code>time</code> 時間（選項 min/max 分鐘）、
+        <code>tags</code> 依類型標籤計分（選項 tags：{"標籤": 0~1}，可加 penalty_tags 扣分、kid:true 避開高年齡遊戲）、
+        <code>difficulty</code> 依難度計分（選項 target 1~5、max_weight 超過就大幅扣分（null 表示不限）、tags 偏好標籤小加分）。<br>
+        <b>weight</b>：這題的配分（全部加起來約 100）。<b>reason</b>：推薦理由，可用 <code>{time_text}</code>、<code>{weight_text}</code>。<br>
+        <b>value</b>：選項代碼（英數字），平板 APP 會用到；已上線後請盡量不要改。<br>
+        可用標籤：{% for k, v in TAG_LABELS.items() %}<code>{{ k }}</code>{{ v }}{{ '、' if not loop.last }}{% endfor %}<br>
+        其他：<code>stock_weight</code> 店內可玩加分、<code>duo_bonus</code> 2 人時兩人專屬遊戲加分、<code>kid_age</code>/<code>kid_penalty</code> 帶小孩時避開幾歲以上的遊戲與扣分。
+      </p>
+    </div>
+  </section>
+  <section>
+    <form method="post" class="panel" style="margin-top:0">
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <label class="f">題目設定（JSON）</label>
+      <textarea name="quiz_json" class="json-edit" spellcheck="false">{{ text }}</textarea>
+      <p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn btn-primary btn-sm" name="action" value="save">檢查並儲存</button>
+        <button class="btn btn-ghost btn-sm" name="action" value="reset" formnovalidate onclick="return confirm('還原成預設題目？目前的自訂內容會被覆蓋。')">還原預設</button>
+      </p>
+    </form>
+  </section>
+</div>
+{% endblock %}

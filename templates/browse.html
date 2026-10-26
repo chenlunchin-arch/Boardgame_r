@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_game_bits.html" import facts %}
+{% block title %}找桌遊｜{{ S.store_name }}{% endblock %}
+{% block content %}
+<h1 style="margin:10px 0 4px">找桌遊</h1>
+<form class="searchbar" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="輸入遊戲名稱…">
+  {% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
+  <button class="btn btn-felt">搜尋</button>
+</form>
+<div class="tagbar">
+  <a href="{{ url_for('browse', q=q) }}" class="{{ 'on' if not tag }}"><span class="chip">全部</span></a>
+  {% for code, label in TAG_LABELS.items() %}
+  <a href="{{ url_for('browse', q=q, tag=code) }}" class="{{ 'on' if tag == code }}"><span class="chip">{{ label }}</span></a>
+  {% endfor %}
+</div>
+{% if games %}
+<div class="grid-games">
+  {% for g in games %}
+  <a class="gcard" href="{{ url_for('game_detail', game_id=g.id) }}">
+    <h4>{{ g.name }}</h4>
+    {{ facts(g) }}
+  </a>
+  {% endfor %}
+</div>
+{% else %}<div class="empty">找不到符合的桌遊</div>{% endif %}
+{% endblock %}
