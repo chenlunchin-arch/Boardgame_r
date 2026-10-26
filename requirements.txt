@@ -1,0 +1,8 @@
+flask>=3.0
+waitress>=3.0
+openpyxl>=3.1
+sqlalchemy>=2.0
+# 依 POS 資料庫類型擇一安裝（start.bat 不會自動安裝）：
+# pymysql          # MySQL / MariaDB
+# pyodbc           # SQL Server（另需安裝 Microsoft ODBC Driver 17/18）
+# psycopg2-binary  # PostgreSQL
